@@ -10,6 +10,7 @@ from __future__ import print_function, division
 import sys
 import argparse
 import timeit
+import ConfigParser
 try:
     import cPickle as pickle
 except ImportError:
@@ -62,7 +63,7 @@ class CAD120_QSR_Keeper(object):
         print_success()
 
     def load(self, filename):
-        print("Loading from", filename, end="")
+        print("Loading QSRs from", filename, end="")
         with open(filename, "rb") as f:
             foo = pickle.load(f)
         self.description = foo["description"]
@@ -78,10 +79,20 @@ if __name__ == '__main__':
                "rcc3": "rcc3_rectangle_bounding_boxes_2d"}
     parser = argparse.ArgumentParser(description="CAD120 QSR keeper in QSRlib format")
     parser_group = parser.add_mutually_exclusive_group(required=True)
-    parser_group.add_argument("--load", help="filename to load qsrs from instead of creating them from data", type=str)
+    parser_group.add_argument("-l", "--load", help="filename to load qsrs from instead of creating them from data", type=str)
     parser_group.add_argument("--qsr", help="choose qsr: %s" % options.keys(), type=str)
     args = parser.parse_args()
+
     if args.load is None:
+        config_parser = ConfigParser.SafeConfigParser()
+        if len(config_parser.read("local.ini")) == 0:
+            raise ValueError("'local.ini' not found")
+        try:
+            reader_ini = config_parser.get("local", "reader_ini")
+            reader_load = config_parser.getboolean("local", "reader_load")
+        except ConfigParser.NoOptionError:
+            raise
+
         try:
             which_qsr = options[args.qsr]
         except (IndexError, KeyError) as e:
@@ -89,7 +100,7 @@ if __name__ == '__main__':
             sys.exit(1)
 
         qsrlib = QSRlib()
-        reader = CAD120_Data_Reader(config_path="/home/cserv1_a/soc_staff/meniga/code/strands/strands_data_readers")
+        reader = CAD120_Data_Reader(config_filename=reader_ini, load_from_files=reader_load)
         print()
         keeper = CAD120_QSR_Keeper(description="description", reader=reader, qsrlib=qsrlib, which_qsr=which_qsr)
         # optional saving
