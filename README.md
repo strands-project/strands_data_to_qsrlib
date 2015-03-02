@@ -20,7 +20,7 @@ They usually have the option to load the QSRs directly from some file.
 ### Installation
 You do need to have
 [QSRlib](https://github.com/strands-project/strands_qsr_lib) somewhere installed
-where it can be found by `strands_data_readers`. Easiest way is probably to 
+where it can be found by the `readers` and the `keepers`. Easiest way is probably to 
 modify your `PYTHONPATH` or if you are using an IDE then check its documentation
 on how to resolve dependencies.
 
