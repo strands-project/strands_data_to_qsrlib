@@ -22,7 +22,7 @@ from utilities import *
 from qsrlib_io.world_trace import *
 
 class CAD120_Data_Reader(object):
-    def __init__(self, config_path="", skeleton_pass_filter=("H", "LH", "RH"),
+    def __init__(self, config_filename="config.ini", skeleton_pass_filter=("H", "LH", "RH"),
                  load_from_files=False, read_tracks=True):
         start = timeit.default_timer()
 
@@ -30,7 +30,6 @@ class CAD120_Data_Reader(object):
         self.load_from_files = load_from_files
         self.read_tracks = read_tracks
 
-        config_filename = os.path.join(config_path, "config.ini")
         config_parser = ConfigParser.SafeConfigParser()
         if len(config_parser.read(config_filename)) == 0:
             raise ValueError("Config file not found, please provide a config.ini file as described in the documentation")
