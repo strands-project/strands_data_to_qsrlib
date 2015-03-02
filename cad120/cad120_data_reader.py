@@ -23,10 +23,11 @@ from qsrlib_io.world_trace import *
 
 class CAD120_Data_Reader(object):
     def __init__(self, config_path="", skeleton_pass_filter=("H", "LH", "RH"),
-                 load_from_files_overwrite=None, read_tracks=True):
+                 load_from_files=False, read_tracks=True):
         start = timeit.default_timer()
 
         print("Initializing...", end="")
+        self.load_from_files = load_from_files
         self.read_tracks = read_tracks
 
         config_filename = os.path.join(config_path, "config.ini")
@@ -37,17 +38,6 @@ class CAD120_Data_Reader(object):
         try:
             self.corrected_labeling_path = config_parser.get(config_section, "corrected_labeling_path")
             self.tracks_path = config_parser.get(config_section, "path")
-            if load_from_files_overwrite is None:
-                self.load_from_files = config_parser.get(config_section, "load_from_files")
-                if self.load_from_files == "yes" or self.load_from_files == "true" or self.load_from_files == "True":
-                    self.load_from_files = True
-                elif self.load_from_files == "no" or self.load_from_files == "false" or self.load_from_files == "False":
-                    self.load_from_files = False
-                else:
-                    raise ValueError("load_from_files should be yes/true/True or no/false/False")
-            else:
-                print(colorify(Fore.YELLOW, "Warning:"), "overwriting load_from_files from 'config.ini'")
-                self.load_from_files = load_from_files_overwrite
             self.sub_sequences_filename = config_parser.get(config_section, "sub_sequences_filename")
             self.sub_time_segmentation_filename = config_parser.get(config_section, "sub_time_segmentation_filename")
             self.ground_truth_tracks_filename = config_parser.get(config_section, "ground_truth_tracks_filename")
@@ -535,7 +525,10 @@ class attrdict(dict):
 
 
 if __name__ == '__main__':
-    reader = CAD120_Data_Reader(load_from_files_overwrite=True)
+    parser = argparse.ArgumentParser(description="CAD120 data reader in QSRlib format")
+    parser.add_argument("-l", "--load", dest="load", action="store_true", help="load the data from the files in 'config.ini'")
+    args = parser.parse_args()
+    reader = CAD120_Data_Reader(load_from_files=args.load)
     # reader.save()
 
     ## DEBUGGING
