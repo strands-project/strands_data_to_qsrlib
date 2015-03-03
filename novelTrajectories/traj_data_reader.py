@@ -57,7 +57,8 @@ class Trajectory_Data_Reader(object):
         except ConfigParser.NoOptionError:
             raise
 
-
+        #TODO
+        #Add this into a "keeper" class. With a load and Save function.
         if len(self.list1) == 0:
             print("No object list provided")
         elif len(self.list2) == 0:
@@ -68,6 +69,7 @@ class Trajectory_Data_Reader(object):
         else:
             self.apply_qsr_lib()
    
+
 
     def apply_qsr_lib(self):
       
@@ -155,15 +157,19 @@ if __name__ == "__main__":
        #When only one is passed, all pairwise combinations are computed
     reader = Trajectory_Data_Reader(objects_in_roi, trajectory_poses, config_path)
 
-    print(reader.spatial_relations['93a66b0e-a9ae-50b8-89a4-be112db759f8'].trace[1].qsrs['Printer (photocopier)_5,trajectory'].qsr)
+    for uuid, data in reader.spatial_relations.items():
+        print(type(data))
+        print(type(data.trace))
+        print(uuid)
+        for timepoint in data.trace:
+            print(timepoint)
+            for key in data.trace[timepoint].qsrs:
+                print(key)
+                print(data.trace[timepoint].qsrs[key].qsr)
 
-    #for (uuid, i) in reader.spatial_relations.items():
-    #    print(uuid)
-    #    print(i)
-        #print(i[uuid][0].qsrs.keys())
-        #print(key)
-        #if frame == 5: sys.exit(1)
-    #reader = Trajectory_Data_Reader(objects_in_roi)
+
+        sys.exit(1)
+
 
 
 

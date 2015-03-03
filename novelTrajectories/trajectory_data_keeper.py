@@ -19,7 +19,6 @@ from qsrlib.qsrlib import QSRlib, QSRlib_Request_Message
 from utilities import *
 
 
-
 class Trajectory_QSR_Keeper(object):
     def __init__(self, description="", reader=None, qsrlib=None, which_qsr="", load_from_file=""):
         start = timeit.default_timer()
@@ -75,11 +74,6 @@ class Trajectory_QSR_Keeper(object):
         self.which_qsr = foo["which_qsr"]
         self.world_qsr_traces = foo["world_qsr_traces"]
         print_success()
-
-
-
-
-
 
 
 if __name__ == "__main__":
