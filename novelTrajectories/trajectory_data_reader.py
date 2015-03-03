@@ -155,10 +155,14 @@ if __name__ == "__main__":
        #When only one is passed, all pairwise combinations are computed
     reader = Trajectory_Data_Reader(objects_in_roi, trajectory_poses, config_path)
 
-    for (frame, key) in reader.spatial_relations['7d638405-b2f8-55ce-b593-efa8e3f2ff2e'].items():
-        print(frame)
-        print(key)
-        if frame == 5: sys.exit(1)
+    print(reader.spatial_relations['93a66b0e-a9ae-50b8-89a4-be112db759f8'].trace[1].qsrs['Printer (photocopier)_5,trajectory'].qsr)
+
+    #for (uuid, i) in reader.spatial_relations.items():
+    #    print(uuid)
+    #    print(i)
+        #print(i[uuid][0].qsrs.keys())
+        #print(key)
+        #if frame == 5: sys.exit(1)
     #reader = Trajectory_Data_Reader(objects_in_roi)
 
 
