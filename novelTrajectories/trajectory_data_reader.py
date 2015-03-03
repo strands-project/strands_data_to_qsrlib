@@ -16,6 +16,7 @@ import sys
 import os
 import itertools
 import numpy as np
+from utilities import merge_world_qsr_traces
 
 from qsrlib.qsrlib import QSRlib_Request_Message
 from qsrlib_io.world_trace import Object_State, World_Trace
@@ -76,6 +77,7 @@ class Trajectory_Data_Reader(object):
         which_qsr = options[self.params[0]]
 
         for uuid, poses in trajectories.items():
+            world_traj_qsrs = []
             worlds = self.get_qsrlib_world(uuid, poses, objects)
             self.spatial_relations[uuid] = {}
 
@@ -86,13 +88,15 @@ class Trajectory_Data_Reader(object):
                 req = cln.make_ros_request_message(qsrlib_request_message)
                 res = cln.request_qsrs(req)
                 out = pickle.loads(res.data)
+                world_traj_qsrs.append(out.qsrs)
+            self.spatial_relations[uuid] = merge_world_qsr_traces(world_traj_qsrs)
 
-                for t in out.qsrs.get_sorted_timestamps():
-                    if t not in self.spatial_relations[uuid]:       
-                        self.spatial_relations[uuid][t] = {}
-                    
-                    relations = str(out.qsrs.trace[t].qsrs.values()[0].qsr)
-                    self.spatial_relations[uuid][t][(uuid, obj)] = relations            
+                # for t in out.qsrs.get_sorted_timestamps():
+                #     if t not in self.spatial_relations[uuid]:
+                #         self.spatial_relations[uuid][t] = {}
+                #
+                #     relations = str(out.qsrs.trace[t].qsrs.values()[0].qsr)
+                #     self.spatial_relations[uuid][t][(uuid, obj)] = relations
 
 
 
