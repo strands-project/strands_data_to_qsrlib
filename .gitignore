@@ -1,5 +1,6 @@
 ########### CUSTOM .gitignore ##################
 config.ini
+local.ini
 .project
 .pydevproject
 *~
