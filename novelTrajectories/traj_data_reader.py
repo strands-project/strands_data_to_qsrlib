@@ -30,20 +30,33 @@ options = {"rcc3": "rcc3_rectangle_bounding_boxes_2d",
            "rcc3a": "rcc3_rectangle_bounding_boxes_2d"}
 
 
+def qsr_setup(data_dir, params, date):
+    params_tag = map(str, params)
+    params_tag = '__'.join(params_tag)
+    qsr_tag = params_tag + date
+    qsr_dir = os.path.join(data_dir, 'qsr_dump/')
+    return qsr_dir, qsr_tag
+
+
 def list_condition((item1, item2)):
     return item1 != item2
+
+
 
 class Trajectory_Data_Reader(object):
 
     def __init__(self, objects=[], trajectories=[], config_filename="config.ini"):
-
-        print("Initializing...")
+        
+        print("Initializing Data Reader...")
         self.list1 = objects
         self.list2 = trajectories
+
         self.spatial_relations = {}
+        self.config = config_filename
 
         config_parser = ConfigParser.SafeConfigParser()
         print(config_parser.read(config_filename))
+
         if len(config_parser.read(config_filename)) == 0:
             raise ValueError("Config file not found, please provide a config.ini file as described in the documentation")
         config_section = "trajectory_data_reader"
@@ -55,28 +68,24 @@ class Trajectory_Data_Reader(object):
             n = config_parser.get(config_section, "n")
             self.params = (qsr, q, v, n)
         except ConfigParser.NoOptionError:
-            raise
-
-        #TODO
-        #Add this into a "keeper" class. With a load and Save function.
+            raise    
+        
         if len(self.list1) == 0:
-            print("No object list provided")
+            print("No object list provided. Pass reader to QSR_keeper class.")
         elif len(self.list2) == 0:
-            print("    No second list provided.\n    All pairwise relations in list 1 being generated...")
+            print(" No second list provided.\n All pairwise relations in list 1 being generated...")
             pairwise_objects = {}
-            for (obj1, obj2) in filter(list_condition, itertools.product(self.list1, self.list1)):
+            for (obj1, obj2) in filter(list_condition, itertools.product(self.list1,    self.list1)):
                 print(obj1, obj2)
         else:
             self.apply_qsr_lib()
-   
 
 
     def apply_qsr_lib(self):
-      
         objects = self.list1
         trajectories = self.list2
         print(self.params)
-        which_qsr = options[self.params[0]]
+        self.which_qsr = options[self.params[0]]
 
         for uuid, poses in trajectories.items():
             world_traj_qsrs = []
@@ -84,7 +93,7 @@ class Trajectory_Data_Reader(object):
             self.spatial_relations[uuid] = {}
 
             for (uuid, obj), world in worlds.items():
-                qsrlib_request_message = QSRlib_Request_Message(which_qsr=which_qsr, \
+                qsrlib_request_message = QSRlib_Request_Message(which_qsr=self.which_qsr, \
                        input_data=world, include_missing_data=True)
                 cln = QSRlib_ROS_Client()
                 req = cln.make_ros_request_message(qsrlib_request_message)
@@ -93,23 +102,13 @@ class Trajectory_Data_Reader(object):
                 world_traj_qsrs.append(out.qsrs)
             self.spatial_relations[uuid] = merge_world_qsr_traces(world_traj_qsrs)
 
-                # for t in out.qsrs.get_sorted_timestamps():
-                #     if t not in self.spatial_relations[uuid]:
-                #         self.spatial_relations[uuid][t] = {}
-                #
-                #     relations = str(out.qsrs.trace[t].qsrs.values()[0].qsr)
-                #     self.spatial_relations[uuid][t][(uuid, obj)] = relations
-
-
-
 
     def get_qsrlib_world(self, uuid, t_poses, objects):
-        (qsr, _q,v,n) =  self.params
-        q = float('0.' + _q.split('_')[1])  #convert q from string to float
-
         o1 = []          #object 1 is always the trajectory
         o2_dic = {}      #object 2 is always the SOMA object
         worlds = {}
+        (qsr, _q,v,n) =  self.params
+        q = float('0.' + _q.split('_')[1])  #convert q from string to float
 
         for obj in objects:
             o2_dic[obj] = []
@@ -130,9 +129,61 @@ class Trajectory_Data_Reader(object):
             worlds[(uuid, obj)].add_object_state_series(o1)
             worlds[(uuid, obj)].add_object_state_series(o2)
 
-        #print(worlds[('7d638405-b2f8-55ce-b593-efa8e3f2ff2e', u'Printer (photocopier)_2')])
         return worlds
 
+
+
+
+
+class Trajectory_QSR_Keeper(object):
+    def __init__(self, description="", objects=[], trajectories=[],
+                reader=None, load_from_file="", dir=""):
+
+        print("Initializing Data Keeper...")
+        self.reader = reader
+        self.list1 = objects
+        self.list2 = trajectories
+    
+        if load_from_file is not None and load_from_file != "":
+            self.load(dir, load_from_file)
+        else:
+            if type(self.reader) is not Trajectory_Data_Reader:
+                raise TypeError("Provide a Trajectory_Data_Reader object")
+            
+            if len(self.list1) == 0:
+                raise TypeError("No object list provided.")
+            elif len(self.list2) == 0:
+                raise TypeError("    No second list provided.\n    All pairwise relations in list 1 being generated...")
+                pairwise_objects = {}
+                for (obj1, obj2) in filter(list_condition, itertools.product(self.list1,    self.list1)):
+                    print(obj1, obj2)
+            else:
+                self.reader = Trajectory_Data_Reader(self.list1, self.list2, reader.config)
+
+
+    def save(self, path):
+        print("Saving...")
+        qsr_dir, tag = qsr_setup(path, self.reader.params, self.reader.date)
+        filename  = os.path.join(qsr_dir, 'all_qsrs_' + tag + '.p')
+        print(filename)
+
+        foo = {"which_qsr": self.reader.params, \
+              "world_qsr_traces":self.reader.spatial_relations}
+        with open(filename, "wb") as f:
+            pickle.dump(foo, f)
+        print("success")
+
+
+    def load(self, dir, filename):
+        path  = os.path.join(dir, 'qsr_dump/' + filename)
+        print("Loading QSRs from", path)
+        
+        with open(path, "rb") as f:
+            foo = pickle.load(f)
+
+        self.reader.params = foo["which_qsr"]
+        self.reader.spatial_relations = foo["world_qsr_traces"]
+        print("success")
 
 
 
@@ -151,12 +202,34 @@ if __name__ == "__main__":
 
     #Options File:
     config_path = '/home/strands/STRANDS/config.ini'
+   
+    #Create data_reader class - needs config file.
+    reader = Trajectory_Data_Reader(config_filename = config_path)
+
+    #data_reader can be ran in stand-alone:
+    #reader = Trajectory_Data_Reader(objects_in_roi, trajectory_poses, config_path)    
+
+    #Or create data_keeper class
+    keeper = Trajectory_QSR_Keeper(objects=objects_in_roi, \
+                    trajectories=trajectory_poses, reader=reader)
+
+    #Data_keeper can be used to save and load from pickle files
+    keeper.save(data_dir)
+    #print(len(keeper.reader.spatial_relations))
+
+    test_load = 'all_qsrs_qtcb__0_01__False__True__03_03_2015.p'
+    keeper.load(data_dir, test_load)
+    #print(len(keeper.reader.spatial_relations))
+
+    ##More Tests:
+    test_keeper= Trajectory_QSR_Keeper(reader=reader, load_from_file = test_load, dir=data_dir) 
+    #print(len(test_keeper.reader.spatial_relations))
 
     #TODO: Input Two lists. 
        #When two lists are passed, products of the two lists are computed
        #When only one is passed, all pairwise combinations are computed
-    reader = Trajectory_Data_Reader(objects_in_roi, trajectory_poses, config_path)
 
+    """#prints one trajectories data
     for uuid, data in reader.spatial_relations.items():
         print(type(data))
         print(type(data.trace))
@@ -169,6 +242,7 @@ if __name__ == "__main__":
 
 
         sys.exit(1)
+    """
 
 
 
