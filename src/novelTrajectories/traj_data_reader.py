@@ -16,7 +16,11 @@ import sys
 import os
 import itertools
 import numpy as np
-from utilities import merge_world_qsr_traces
+
+
+from cad120.cad120_data_reader import CAD120_Data_Reader
+
+from utilities.utilities import merge_world_qsr_traces
 
 from qsrlib.qsrlib import QSRlib_Request_Message
 from qsrlib_io.world_trace import Object_State, World_Trace
@@ -259,7 +263,7 @@ if __name__ == "__main__":
     reader = Trajectory_Data_Reader(config_filename = config_path)
 
     #data_reader can be ran in stand-alone:
-    #reader = Trajectory_Data_Reader(objects_in_roi, trajectory_poses, config_path)    
+    reader = Trajectory_Data_Reader(objects_in_roi, trajectory_poses, config_path)    
 
     #Or create data_keeper class
     #keeper = Trajectory_QSR_Keeper(objects=objects_in_roi, \
