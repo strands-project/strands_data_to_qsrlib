@@ -84,7 +84,7 @@ class Trajectory_Data_Reader(object):
     def apply_qsr_lib(self):
         objects = self.list1
         trajectories = self.list2
-        print(self.params)
+        print("params = ", self.params, '\n')
         self.which_qsr = options[self.params[0]]
 
         for uuid, poses in trajectories.items():
@@ -187,6 +187,58 @@ class Trajectory_QSR_Keeper(object):
 
 
 
+
+
+class Episodes(object):
+    def __init__(self, reader=None, load_from_file="", dir=""):
+        
+        self.reader=reader
+        self.all_episodes = {}
+        if load_from_file is not None and load_from_file != "":
+            self.load(dir, load_from_file)
+
+
+
+    def get_episodes(self, noise_thres=3):
+        from data_processing_utils import  compute_episodes, filter_intervals
+
+        cnt=0
+
+        NOISE_THRESHOLD = noise_thres
+
+        for uuid in self.reader.spatial_relations:
+            key, epi  = compute_episodes(uuid, self.reader.spatial_relations[uuid])
+            print(cnt, "  ", key)
+            # Filter the episods to remove very short transitions that are noise
+            fepi = {}
+            for e in epi:
+                fepi[e] = filter_intervals(epi[e], NOISE_THRESHOLD)
+
+            # Add filtered episodes to all_episodes
+            self.all_episodes[key] = fepi
+            cnt+=1
+        
+
+    def save(self, data_dir):
+        print("Saving...")
+        filename  = os.path.join(data_dir, 'episodes_dump/all_episodes.p')
+        print(filename)
+
+        with open(filename, "wb") as f:
+            pickle.dump(self.all_episodes, f)
+        print("success")
+
+
+    def load(self, dir, filename):
+        path  = os.path.join(dir, 'episodes_dump/' + filename)
+        print("Loading Episodes from", path)
+        with open(path, "rb") as f:
+            self.all_episodes = pickle.load(f)
+        print("success")
+
+
+
+
 if __name__ == "__main__":
     rospy.init_node("trajectory_data_reader")
 
@@ -210,20 +262,35 @@ if __name__ == "__main__":
     #reader = Trajectory_Data_Reader(objects_in_roi, trajectory_poses, config_path)    
 
     #Or create data_keeper class
-    keeper = Trajectory_QSR_Keeper(objects=objects_in_roi, \
-                    trajectories=trajectory_poses, reader=reader)
+    #keeper = Trajectory_QSR_Keeper(objects=objects_in_roi, \
+    #                trajectories=trajectory_poses, reader=reader)
 
     #Data_keeper can be used to save and load from pickle files
-    keeper.save(data_dir)
+    #keeper.save(data_dir)
     #print(len(keeper.reader.spatial_relations))
 
     test_load = 'all_qsrs_qtcb__0_01__False__True__03_03_2015.p'
-    keeper.load(data_dir, test_load)
+    #keeper.load(data_dir, test_load)
     #print(len(keeper.reader.spatial_relations))
 
     ##More Tests:
-    test_keeper= Trajectory_QSR_Keeper(reader=reader, load_from_file = test_load, dir=data_dir) 
-    #print(len(test_keeper.reader.spatial_relations))
+    keeper= Trajectory_QSR_Keeper(reader=reader, load_from_file = test_load, dir=data_dir) 
+
+    #Create Episodes from QSRs:
+    #ep = Episodes(reader=keeper.reader)
+    #ep.get_episodes(noise_thres=3)
+    #ep.save(data_dir)
+
+    #Test Load:
+    ep_test = Episodes(keeper.reader, 'all_episodes.p', data_dir)
+    #print(ep_test.all_episodes.keys())
+    
+
+    print(ep_test.all_episodes['d6c54902-3259-5ff4-b1ca-9ed5132df53d__1__103'].keys())
+
+    for i in ep_test.all_episodes['d6c54902-3259-5ff4-b1ca-9ed5132df53d__1__103']:
+        print(ep_test.all_episodes['d6c54902-3259-5ff4-b1ca-9ed5132df53d__1__103'][i])
+
 
     #TODO: Input Two lists. 
        #When two lists are passed, products of the two lists are computed
