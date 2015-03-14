@@ -17,15 +17,10 @@ import os
 import itertools
 import numpy as np
 
-
-from cad120.cad120_data_reader import CAD120_Data_Reader
-
 from utilities.utilities import merge_world_qsr_traces
-
 from qsrlib.qsrlib import QSRlib_Request_Message
 from qsrlib_io.world_trace import Object_State, World_Trace
 from qsrlib_ros.qsrlib_ros_client import QSRlib_ROS_Client
-
 
 options = {"rcc3": "rcc3_rectangle_bounding_boxes_2d",
            "qtcb": "qtc_b_simplified",
@@ -91,6 +86,8 @@ class Trajectory_Data_Reader(object):
         print("params = ", self.params, '\n')
         self.which_qsr = options[self.params[0]]
 
+        print("Number of qsrlib calls = ", len(trajectories)*len(objects), '\n')
+
         for uuid, poses in trajectories.items():
             world_traj_qsrs = []
             worlds = self.get_qsrlib_world(uuid, poses, objects)
@@ -124,10 +121,14 @@ class Trajectory_Data_Reader(object):
             o1.append(Object_State(name="trajectory", timestamp = frame, x=x, y=y, \
                     quantisation_factor=q, validate=v, no_collapse=n))
 
-            for obj in objects:            
-                (x,y) = objects[obj]
+            for obj in objects:      
+                if len(objects[obj])==2:
+                    (x,y) = objects[obj] 
+                else:
+                    (x,y,z) = objects[obj] 
+
                 o2_dic[obj].append(Object_State(name=obj, timestamp = frame, x=x, y=y, \
-                    quantisation_factor=q, validate=v, no_collapse=n))
+                     quantisation_factor=q, validate=v, no_collapse=n))
 
         for obj, o2 in o2_dic.items():
             worlds[(uuid, obj)].add_object_state_series(o1)
@@ -194,6 +195,7 @@ class Trajectory_QSR_Keeper(object):
 
 
 class Episodes(object):
+
     def __init__(self, reader=None, load_from_file="", dir=""):
         
         self.reader=reader
@@ -202,17 +204,15 @@ class Episodes(object):
             self.load(dir, load_from_file)
 
 
-
-    def get_episodes(self, noise_thres=3):
+    def get_episodes(self, noise_thres=3, out=False):
         from data_processing_utils import  compute_episodes, filter_intervals
 
         cnt=0
-
         NOISE_THRESHOLD = noise_thres
 
-        for uuid in self.reader.spatial_relations:
-            key, epi  = compute_episodes(uuid, self.reader.spatial_relations[uuid])
-            print(cnt, "  ", key)
+        for (uuid, qsr_world_trace) in self.reader.spatial_relations.items():
+            key, epi  = compute_episodes(uuid, qsr_world_trace)
+            if out: print(cnt, "  ", key)
             # Filter the episods to remove very short transitions that are noise
             fepi = {}
             for e in epi:
@@ -247,7 +247,7 @@ if __name__ == "__main__":
     rospy.init_node("trajectory_data_reader")
 
     #LOAD SOME DATA#
-    data_dir='/home/strands/STRANDS'
+    data_dir='/home/strands/STRANDS/object_dump'
     obj_file  = os.path.join(data_dir, 'obj_dump.p')
     traj_file = os.path.join(data_dir, 'traj_dump.p')
     objects_in_roi = pickle.load(open(obj_file))
@@ -273,12 +273,12 @@ if __name__ == "__main__":
     #keeper.save(data_dir)
     #print(len(keeper.reader.spatial_relations))
 
-    test_load = 'all_qsrs_qtcb__0_01__False__True__03_03_2015.p'
+    #test_load = 'all_qsrs_qtcb__0_01__False__True__03_03_2015.p'
     #keeper.load(data_dir, test_load)
     #print(len(keeper.reader.spatial_relations))
 
     ##More Tests:
-    keeper= Trajectory_QSR_Keeper(reader=reader, load_from_file = test_load, dir=data_dir) 
+    #keeper= Trajectory_QSR_Keeper(reader=reader, load_from_file = test_load, dir=data_dir) 
 
     #Create Episodes from QSRs:
     #ep = Episodes(reader=keeper.reader)
