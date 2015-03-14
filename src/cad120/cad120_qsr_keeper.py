@@ -23,6 +23,7 @@ from utilities import *
 class CAD120_QSR_Keeper(object):
     def __init__(self, description="", reader=None, qsrlib=None, which_qsr="", load_from_file=""):
         start = timeit.default_timer()
+        print("\n--", self.__class__.__name__)
         print("Generating QSRs...")
 
         self.description = description
@@ -79,6 +80,7 @@ if __name__ == '__main__':
                "rcc3": "rcc3_rectangle_bounding_boxes_2d"}
     parser = argparse.ArgumentParser(description="CAD120 QSR keeper in QSRlib format")
     parser_group = parser.add_mutually_exclusive_group(required=True)
+    parser.add_argument("-s", "--save", help="filename to save qsrs", type=str)
     parser_group.add_argument("-l", "--load", help="filename to load qsrs from instead of creating them from data", type=str)
     parser_group.add_argument("--qsr", help="choose qsr: %s" % options.keys(), type=str)
     args = parser.parse_args()
@@ -104,7 +106,8 @@ if __name__ == '__main__':
         print()
         keeper = CAD120_QSR_Keeper(description="description", reader=reader, qsrlib=qsrlib, which_qsr=which_qsr)
         # optional saving
-        # keeper.save("/usr/not-backed-up/meniga/datasets/cad120_pickles/qsr_keeper_sg1.p")
+        if args.save:
+            keeper.save(filename=args.save)
     else:
         keeper = CAD120_QSR_Keeper(load_from_file=args.load)
 

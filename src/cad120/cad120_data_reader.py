@@ -25,7 +25,7 @@ class CAD120_Data_Reader(object):
     def __init__(self, config_filename="config.ini", skeleton_pass_filter=("H", "LH", "RH"),
                  load_from_files=False, read_tracks=True):
         start = timeit.default_timer()
-
+        print("\n--", self.__class__.__name__)
         print("Initializing...", end="")
         self.load_from_files = load_from_files
         self.read_tracks = read_tracks
@@ -125,7 +125,7 @@ class CAD120_Data_Reader(object):
             print(colorify(Fore.YELLOW, "Warning:"), "Was requested to skip tracks reading")
 
         stop = timeit.default_timer()
-        print("\nParsing time: %.2f secs" % (stop - start))
+        print("Data loaded in: %.2f secs" % (stop - start))
 
 
     def __init_subject_super_vid_qsrs_seqs(self):
