@@ -6,16 +6,18 @@ from qsrlib_io.world_trace import World_Trace, Object_State
 from qsrlib.qsrlib import QSRlib, QSRlib_Request_Message
 
 def print_success():
-    print("\t\t" + Fore.GREEN + "done" + Fore.RESET)
+    print("success")
+    #print("\t\t" + Fore.GREEN + "done" + Fore.RESET)
 
 def print_fail():
-    print("\t\t" + Fore.RED + "fail" + Fore.RESET)
+    print("fail")
+    #print("\t\t" + Fore.RED + "fail" + Fore.RESET)
 
-def cprint(s, color, reset=Fore.RESET):
-    print(s + color + reset)
+#def cprint(s, color, reset=Fore.RESET):
+    #print(s + color + reset)
 
-def colorify(color, s, reset=Fore.RESET):
-    return color + s + reset
+#def colorify(color, s, reset=Fore.RESET):
+    #return color + s + reset
 
 def merge_world_qsr_traces(traces, qsr_type=None):
     """
