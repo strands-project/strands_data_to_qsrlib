@@ -44,7 +44,8 @@ def list_condition((item1, item2)):
 
 class Trajectory_Data_Reader(object):
 
-    def __init__(self, objects=[], trajectories=[], config_filename="config.ini"):
+    def __init__(self, objects=[], trajectories=[], config_filename="config.ini",
+                    roi=""):
         
         print("Initializing Data Reader...")
         self.list1 = objects
@@ -52,6 +53,7 @@ class Trajectory_Data_Reader(object):
 
         self.spatial_relations = {}
         self.config = config_filename
+        self.roi = roi
 
         config_parser = ConfigParser.SafeConfigParser()
         print(config_parser.read(config_filename))
@@ -156,24 +158,27 @@ class Trajectory_QSR_Keeper(object):
                 raise TypeError("Provide a Trajectory_Data_Reader object")
             
             if len(self.list1) == 0:
-                raise TypeError("No object list provided.")
+                raise TypeError("No objects list provided.")
             elif len(self.list2) == 0:
                 raise TypeError("    No second list provided.\n    All pairwise relations in list 1 being generated...")
                 pairwise_objects = {}
                 for (obj1, obj2) in filter(list_condition, itertools.product(self.list1,    self.list1)):
                     print(obj1, obj2)
             else:
-                self.reader = Trajectory_Data_Reader(self.list1, self.list2, reader.config)
+                self.reader = Trajectory_Data_Reader(self.list1, self.list2, reader.config, self.reader.roi)
 
 
     def save(self, path):
         print("Saving...")
+
+        roi = self.reader.roi
         qsr_dir, tag = qsr_setup(path, self.reader.params, self.reader.date)
-        filename  = os.path.join(qsr_dir, 'all_qsrs_' + tag + '.p')
+        filename  = os.path.join(qsr_dir, roi + '_qsrs_' + tag + '.p')
         print(filename)
 
-        foo = {"which_qsr": self.reader.params, \
-              "world_qsr_traces":self.reader.spatial_relations}
+        foo = {"ROI": roi,
+               "which_qsr": self.reader.params, \
+               "world_qsr_traces":self.reader.spatial_relations}
         with open(filename, "wb") as f:
             pickle.dump(foo, f)
         print("success")
@@ -185,13 +190,10 @@ class Trajectory_QSR_Keeper(object):
         
         with open(path, "rb") as f:
             foo = pickle.load(f)
-
+        self.reader.roi = foo["ROI"]
         self.reader.params = foo["which_qsr"]
         self.reader.spatial_relations = foo["world_qsr_traces"]
         print("success")
-
-
-
 
 
 class Episodes(object):
@@ -202,7 +204,6 @@ class Episodes(object):
         self.all_episodes = {}
         if load_from_file is not None and load_from_file != "":
             self.load(dir, load_from_file)
-
 
     def get_episodes(self, noise_thres=3, out=False):
         from data_processing_utils import  compute_episodes, filter_intervals
@@ -225,11 +226,13 @@ class Episodes(object):
 
     def save(self, data_dir):
         print("Saving...")
-        filename  = os.path.join(data_dir, 'episodes_dump/all_episodes.p')
+        filename  = os.path.join(data_dir, 'episodes_dump/' + self.reader.roi \
+            + '_episodes.p')
         print(filename)
-
+        foo = {"ROI": self.reader.roi,
+               "episodes": self.all_episodes}
         with open(filename, "wb") as f:
-            pickle.dump(self.all_episodes, f)
+            pickle.dump(foo, f)
         print("success")
 
 
@@ -237,7 +240,9 @@ class Episodes(object):
         path  = os.path.join(dir, 'episodes_dump/' + filename)
         print("Loading Episodes from", path)
         with open(path, "rb") as f:
-            self.all_episodes = pickle.load(f)
+            foo = pickle.load(f)
+        self.reader.roi = foo["ROI"]
+        self.all_episodes = foo["episodes"]
         print("success")
 
 
