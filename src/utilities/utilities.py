@@ -1,6 +1,6 @@
 from __future__ import print_function, division
 
-from colorama import Fore
+#from colorama import Fore
 from qsrlib_io.world_qsr_trace import World_QSR_Trace
 from qsrlib_io.world_trace import World_Trace, Object_State
 from qsrlib.qsrlib import QSRlib, QSRlib_Request_Message
