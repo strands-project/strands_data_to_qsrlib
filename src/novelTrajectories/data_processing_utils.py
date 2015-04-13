@@ -30,7 +30,8 @@ def compute_episodes(uuid, spatial_relations):
                     obj_relation_data[obj_pair] = []
                 qsr = "%s" % spatial_relations.trace[frame].qsrs[obj_pair].qsr  #qsr needs to be a string
                 obj_relation_data[obj_pair].append((frame, qsr))
-                
+
+    
     elif type(spatial_relations) == dict:
         frames = spatial_relations.keys()
         frames.sort()
@@ -42,12 +43,27 @@ def compute_episodes(uuid, spatial_relations):
 
 
     for obj_pair in obj_relation_data:
-        obj_0_id = uuid
-        obj_0_type = 'traj'
 
-        obj = obj_pair.replace(',trajectory', ' ')
-        obj_1_id = obj
-        obj_1_type = obj.split('_')[0]
+        obj1, obj2 = obj_pair.split(',')
+
+        if obj1=="trajectory":
+            obj_0_id = uuid
+            obj_0_type = "trajectory"
+            obj_1_id = obj2
+            obj_1_type = obj2.split('_')[0]
+
+        elif obj2=="trajectory":
+            obj_0_id = uuid
+            obj_0_type = "trajectory"
+            obj_1_id = obj1
+            obj_1_type = obj1.split('_')[0]
+
+        else:
+            obj_0_id = obj1
+            obj_0_type = obj1.split('_')[0]
+            obj_1_id = obj2
+            obj_1_type = obj2.split('_')[0]
+
 
         episodes[(obj_0_id, obj_0_type, obj_1_id, obj_1_type)] = []
         epi_start = obj_relation_data[obj_pair][0][0]
